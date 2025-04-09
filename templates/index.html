@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Escaneo de QR con Cámara</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/html5-qrcode@2.3.9/html5-qrcode.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+    h2 { color: #333; }
+    input, button {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      font-size: 16px;
+    }
+    #response {
+      margin-top: 15px;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+    }
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Escaneo de QR con Cámara</h2>
+
+  <label>Tu nombre de usuario:</label>
+  <input type="text" id="username" placeholder="Ej. stephane" />
+
+  <div id="reader"></div>
+
+  <div id="response"></div>
+
+  <script>
+    async function enviarQR(qr_code) {
+      const username = document.getElementById("username").value;
+      if (!username) {
+        alert("Por favor escribe tu nombre de usuario antes de escanear.");
+        return;
+      }
+
+      const res = await fetch("http://127.0.0.1:5000/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, qr_code })
+      });
+
+      const data = await res.json();
+      document.getElementById("response").innerText = data.message || JSON.stringify(data);
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      enviarQR(decodedText);
+      html5QrcodeScanner.clear(); // Para detener el escaneo después del primer QR
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>
