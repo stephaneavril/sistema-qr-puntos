@@ -70,6 +70,16 @@ def get_points(username):
     else:
         return jsonify({'message': 'Usuario no encontrado'}), 404
 
+@app.route('/ranking')
+def ranking():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT username, points FROM users ORDER BY points DESC LIMIT 20")
+    rows = cursor.fetchall()
+    conn.close()
+    ranking = [{"username": row[0], "points": row[1]} for row in rows]
+    return jsonify(ranking)
+
 # Iniciar el servidor
 @app.route('/')
 def home():

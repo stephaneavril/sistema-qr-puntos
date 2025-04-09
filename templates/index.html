@@ -2,41 +2,113 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Escaneo de QR con Cámara</title>
+  <title>TEAMS | Sistema de Escaneo QR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/html5-qrcode@2.3.9/html5-qrcode.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
-    h2 { color: #333; }
-    input, button {
-      padding: 10px;
-      margin: 10px 0;
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f1f3f5;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    header {
+      background-color: #ec1c24;
+      color: white;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    header img {
+      height: 40px;
+      margin-right: 10px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    input {
+      padding: 12px;
       width: 100%;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
       font-size: 16px;
     }
-    #response {
-      margin-top: 15px;
-      padding: 10px;
-      background: #fff;
-      border: 1px solid #ccc;
-    }
+
     #reader {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
       margin-top: 20px;
+    }
+
+    #response {
+      background: #e6f3e6;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #ec1c24;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <h2>Escaneo de QR con Cámara</h2>
 
-  <label>Tu nombre de usuario:</label>
-  <input type="text" id="username" placeholder="Ej. stephane" />
+  <header>
+    <img src="https://www.teamsxp.com/assets/images/logo-white.png" alt="Logo TEAMS">
+    <h1>Sistema de Escaneo QR</h1>
+  </header>
 
-  <div id="reader"></div>
+  <div class="container">
+    <h2>Escanea tu código QR</h2>
 
-  <div id="response"></div>
+    <input type="text" id="username" placeholder="Ej. stephane" />
+
+    <div id="reader"></div>
+
+    <div id="response"></div>
+
+    <h2>🏆 Ranking de usuarios</h2>
+    <table id="ranking">
+      <thead>
+        <tr>
+          <th>Posición</th>
+          <th>Usuario</th>
+          <th>Puntos</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <script>
     async function enviarQR(qr_code) {
@@ -46,7 +118,7 @@
         return;
       }
 
-      const res = await fetch("http://127.0.0.1:5000/scan", {
+      const res = await fetch("/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, qr_code })
@@ -54,16 +126,37 @@
 
       const data = await res.json();
       document.getElementById("response").innerText = data.message || JSON.stringify(data);
+      await cargarRanking();
     }
 
     function onScanSuccess(decodedText, decodedResult) {
       enviarQR(decodedText);
-      html5QrcodeScanner.clear(); // Para detener el escaneo después del primer QR
+      html5QrcodeScanner.clear();
     }
 
     const html5QrcodeScanner = new Html5QrcodeScanner(
       "reader", { fps: 10, qrbox: 250 });
     html5QrcodeScanner.render(onScanSuccess);
+
+    async function cargarRanking() {
+      const res = await fetch("/ranking");
+      const data = await res.json();
+
+      const tbody = document.querySelector("#ranking tbody");
+      tbody.innerHTML = "";
+
+      data.forEach((usuario, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${usuario.username}</td>
+          <td>${usuario.points}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    cargarRanking();
   </script>
 </body>
 </html>
