@@ -23,9 +23,22 @@ def scan_qr():
     qr_code = data.get('qr_code')
     username = data.get('username')
 
+    # ✅ Validar que el QR escaneado esté dentro del rango permitido
     if not qr_code or not username:
         return jsonify({'error': 'Faltan datos'}), 400
 
+    if not qr_code.startswith("codigo_qr_"):
+        return jsonify({'error': 'Formato de QR inválido ❌'}), 400
+
+    try:
+        numero = int(qr_code.split("_")[-1])
+    except ValueError:
+        return jsonify({'error': 'QR inválido ❌'}), 400
+
+    if numero < 1 or numero > 50:
+        return jsonify({'error': f'QR {qr_code} fuera de rango (1-50) ❌'}), 400
+
+    # 🛠️ Si pasa la validación, continúa
     conn = get_db_connection()
     cursor = conn.cursor()
 
