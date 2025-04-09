@@ -42,15 +42,6 @@
       color: #333;
     }
 
-    input {
-      padding: 12px;
-      width: 100%;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-
     #reader {
       margin-top: 20px;
     }
@@ -79,6 +70,13 @@
       background-color: #ec1c24;
       color: white;
     }
+
+    select, button {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -91,18 +89,30 @@
   <div class="container">
     <h2>Escanea tu código QR</h2>
 
-    <input type="text" id="username" placeholder="Ej. stephane" />
-    <button onclick="iniciarEscaneo()">Iniciar escaneo</button>
-    <div id="reader"></div>    
+    <div id="reader"></div>
 
-    <div id="response"></div>
+    <div id="puntos-section" style="display: none; margin-top: 20px;">
+      <label for="puntos">¿Cuántos puntos quieres asignar?</label>
+      <select id="puntos">
+        <option value="10">10</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="200">200</option>
+        <option value="500">500</option>
+        <option value="1000">1000</option>
+      </select>
+      <br />
+      <button onclick="confirmarPuntos()">Confirmar</button>
+    </div>
+    
+    <div id="response"></div>    
 
     <h2>🏆 Ranking de usuarios</h2>
     <table id="ranking">
       <thead>
         <tr>
           <th>Posición</th>
-          <th>Usuario</th>
+          <th>Código</th>
           <th>Puntos</th>
         </tr>
       </thead>
@@ -111,40 +121,35 @@
   </div>
 
   <script>
-    async function enviarQR(qr_code) {
-      const username = document.getElementById("username").value;
-      if (!username) {
-        alert("Por favor escribe tu nombre de usuario antes de escanear.");
+    let qr_code_actual = null;
+
+    function onScanSuccess(decodedText, decodedResult) {
+      qr_code_actual = decodedText;
+      document.getElementById("puntos-section").style.display = "block";
+      html5QrcodeScanner.clear();
+    }
+
+    async function confirmarPuntos() {
+      const puntos = document.getElementById("puntos").value;
+
+      if (!qr_code_actual) {
+        alert("Error: no hay código QR escaneado.");
         return;
       }
 
       const res = await fetch("/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, qr_code })
+        body: JSON.stringify({ qr_code: qr_code_actual, puntos: parseInt(puntos) })
       });
 
       const data = await res.json();
-      document.getElementById("response").innerText = data.message || JSON.stringify(data);
+      document.getElementById("response").innerText = data.message || data.error;
+      qr_code_actual = null;
+      document.getElementById("puntos-section").style.display = "none";
+      html5QrcodeScanner.render(onScanSuccess);
       await cargarRanking();
     }
-
-    function onScanSuccess(decodedText, decodedResult) {
-      enviarQR(decodedText);
-      html5QrcodeScanner.clear();
-    }
-
-    function iniciarEscaneo() {
-  const username = document.getElementById("username").value;
-  if (!username) {
-    alert("Por favor escribe tu nombre de usuario primero.");
-    return;
-  }
-
-  const html5QrcodeScanner = new Html5QrcodeScanner(
-    "reader", { fps: 10, qrbox: 250 });
-  html5QrcodeScanner.render(onScanSuccess);
-}
 
     async function cargarRanking() {
       const res = await fetch("/ranking");
@@ -163,6 +168,10 @@
         tbody.appendChild(row);
       });
     }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
 
     cargarRanking();
   </script>
