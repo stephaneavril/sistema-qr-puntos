@@ -102,3 +102,23 @@ def ranking_equipos():
     rows = cursor.fetchall()
     conn.close()
     return jsonify([{"team": row["team_name"], "points": row["total_points"]} for row in rows])
+
+@app.route('/reset', methods=['POST'])
+def reset_all():
+    data = request.get_json()
+    token = data.get("token")
+    
+    # 🔐 Cambia esto por tu clave personal
+    TOKEN_SECRETO = "soybatman"
+
+    if token != TOKEN_SECRETO:
+        return jsonify({'error': 'Token inválido ❌'}), 401
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users")
+    cursor.execute("DELETE FROM scans")
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': '✅ Todos los datos han sido eliminados correctamente'})

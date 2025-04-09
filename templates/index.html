@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>TEAMS | Sistema de Escaneo QR</title>
+  <title>ALFASTARS | Sistema de Escaneo QR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
@@ -120,6 +120,11 @@
     </table>
   </div>
 
+  <div id="admin-reset" style="margin-top: 40px;">
+    <button onclick="mostrarReset()">🗑️ Resetear todos los datos</button>
+  </div>
+
+
   <script>
     let qr_code_actual = null;
 
@@ -174,6 +179,24 @@
     html5QrcodeScanner.render(onScanSuccess);
 
     cargarRanking();
+
+    function mostrarReset() {
+  const token = prompt("Introduce el token secreto para continuar:");
+  if (!token) return;
+
+  fetch("/reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token })
+  })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message || data.error);
+      cargarRanking();
+    });
+}
+
+  
   </script>
 </body>
 </html>
