@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS  # 👈 Importa la extensión
 import sqlite3
 from datetime import datetime
@@ -71,5 +71,9 @@ def get_points(username):
         return jsonify({'message': 'Usuario no encontrado'}), 404
 
 # Iniciar el servidor
+@app.route('/')
+def home():
+    return render_template('index.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
