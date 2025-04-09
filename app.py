@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)
@@ -11,22 +11,23 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Mostrar la interfaz web
+# Página principal
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# Registrar escaneo
+# Escaneo de QR
 @app.route('/scan', methods=['POST'])
 def scan_qr():
     data = request.get_json()
     qr_code = data.get('qr_code')
-    username = data.get('username')
+    puntos = data.get('puntos')
 
-    # ✅ Validar que el QR escaneado esté dentro del rango permitido
-    if not qr_code or not username:
-        return jsonify({'error': 'Faltan datos'}), 400
+    # Validación básica
+    if not qr_code or not isinstance(puntos, int):
+        return jsonify({'error': 'Datos inválidos ❌'}), 400
 
+    # Validar formato y rango
     if not qr_code.startswith("codigo_qr_"):
         return jsonify({'error': 'Formato de QR inválido ❌'}), 400
 
@@ -38,32 +39,42 @@ def scan_qr():
     if numero < 1 or numero > 50:
         return jsonify({'error': f'QR {qr_code} fuera de rango (1-50) ❌'}), 400
 
-    # 🛠️ Si pasa la validación, continúa
+    # Conexión a la base
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Verificar si fue escaneado hace menos de 1 minuto
+    cursor.execute("SELECT timestamp FROM scans WHERE qr_code = ? ORDER BY timestamp DESC LIMIT 1", (qr_code,))
+    last_scan = cursor.fetchone()
+
+    if last_scan:
+        last_time = datetime.fromisoformat(last_scan["timestamp"])
+        now = datetime.now()
+        if now - last_time < timedelta(minutes=1):
+            segundos_restantes = 60 - int((now - last_time).total_seconds())
+            conn.close()
+            return jsonify({'error': f'⏱️ Este código ya fue escaneado. Intenta en {segundos_restantes}s'}), 429
 
     # Crear usuario si no existe
     cursor.execute("SELECT * FROM users WHERE qr_code = ?", (qr_code,))
     user = cursor.fetchone()
 
     if not user:
-        cursor.execute("INSERT INTO users (qr_code, username, points) VALUES (?, ?, 0)", (qr_code, username))
+        cursor.execute("INSERT INTO users (qr_code, username, points) VALUES (?, ?, 0)", (qr_code, qr_code))
         conn.commit()
-        cursor.execute("SELECT * FROM users WHERE qr_code = ?", (qr_code,))
-        user = cursor.fetchone()
 
     # Sumar puntos
-    cursor.execute("UPDATE users SET points = points + 10 WHERE qr_code = ?", (qr_code,))
+    cursor.execute("UPDATE users SET points = points + ? WHERE qr_code = ?", (puntos, qr_code))
 
     # Registrar escaneo
-    cursor.execute("INSERT INTO scans (qr_code, timestamp) VALUES (?, ?)", (qr_code, datetime.now()))
+    cursor.execute("INSERT INTO scans (qr_code, timestamp) VALUES (?, ?)", (qr_code, datetime.now().isoformat()))
 
     conn.commit()
     conn.close()
 
-    return jsonify({'message': f'✅ Código {qr_code} escaneado. ¡10 puntos sumados a {username}!'})
+    return jsonify({'message': f'✅ ¡Se agregaron {puntos} puntos al código {qr_code}!'})
 
-# Ranking por usuario
+# Ranking individual
 @app.route('/ranking')
 def ranking():
     conn = get_db_connection()
