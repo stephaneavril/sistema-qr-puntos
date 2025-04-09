@@ -92,8 +92,8 @@
     <h2>Escanea tu código QR</h2>
 
     <input type="text" id="username" placeholder="Ej. stephane" />
-
-    <div id="reader"></div>
+    <button onclick="iniciarEscaneo()">Iniciar escaneo</button>
+    <div id="reader"></div>    
 
     <div id="response"></div>
 
@@ -134,9 +134,17 @@
       html5QrcodeScanner.clear();
     }
 
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", { fps: 10, qrbox: 250 });
-    html5QrcodeScanner.render(onScanSuccess);
+    function iniciarEscaneo() {
+  const username = document.getElementById("username").value;
+  if (!username) {
+    alert("Por favor escribe tu nombre de usuario primero.");
+    return;
+  }
+
+  const html5QrcodeScanner = new Html5QrcodeScanner(
+    "reader", { fps: 10, qrbox: 250 });
+  html5QrcodeScanner.render(onScanSuccess);
+}
 
     async function cargarRanking() {
       const res = await fetch("/ranking");
