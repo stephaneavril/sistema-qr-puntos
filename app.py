@@ -1,89 +1,80 @@
 from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS  # 👈 Importa la extensión
+from flask_cors import CORS
 import sqlite3
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # 👈 Esto permite que tu HTML se comunique con Flask
+CORS(app)
 
-# Función para conectar a la base de datos
 def get_db_connection():
     conn = sqlite3.connect('scan_points.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Ruta para escanear un QR y sumar puntos
+# Mostrar la interfaz web
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+# Registrar escaneo
 @app.route('/scan', methods=['POST'])
 def scan_qr():
     data = request.get_json()
-
-    username = data.get('username')
     qr_code = data.get('qr_code')
+    username = data.get('username')
 
-    if not username or not qr_code:
+    if not qr_code or not username:
         return jsonify({'error': 'Faltan datos'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Buscar usuario o crearlo si no existe
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    # Crear usuario si no existe
+    cursor.execute("SELECT * FROM users WHERE qr_code = ?", (qr_code,))
     user = cursor.fetchone()
 
     if not user:
-        cursor.execute("INSERT INTO users (username, points) VALUES (?, ?)", (username, 0))
+        cursor.execute("INSERT INTO users (qr_code, username, points) VALUES (?, ?, 0)", (qr_code, username))
         conn.commit()
-        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        cursor.execute("SELECT * FROM users WHERE qr_code = ?", (qr_code,))
         user = cursor.fetchone()
 
-    user_id = user["id"]
+    # Sumar puntos
+    cursor.execute("UPDATE users SET points = points + 10 WHERE qr_code = ?", (qr_code,))
 
-    # Verificar si ya escaneó ese código
-    cursor.execute("SELECT * FROM scans WHERE user_id = ? AND qr_code_id = ?", (user_id, qr_code))
-    already_scanned = cursor.fetchone()
+    # Registrar escaneo
+    cursor.execute("INSERT INTO scans (qr_code, timestamp) VALUES (?, ?)", (qr_code, datetime.now()))
 
-    if already_scanned:
-        conn.close()
-        return jsonify({'message': 'Este código ya fue escaneado por este usuario'}), 200
-
-    # Registrar escaneo y sumar puntos
-    cursor.execute("INSERT OR IGNORE INTO qrcodes (id) VALUES (?)", (qr_code,))
-    cursor.execute("INSERT INTO scans (user_id, qr_code_id, timestamp) VALUES (?, ?, ?)", (user_id, qr_code, datetime.now()))
-    cursor.execute("UPDATE users SET points = points + 10 WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
 
-    return jsonify({'message': 'Puntos sumados exitosamente ✅'}), 200
+    return jsonify({'message': f'✅ Código {qr_code} escaneado. ¡10 puntos sumados a {username}!'})
 
-# Ruta para ver puntos de un usuario
-@app.route('/points/<username>', methods=['GET'])
-def get_points(username):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT points FROM users WHERE username = ?", (username,))
-    row = cursor.fetchone()
-    conn.close()
-
-    if row:
-        return jsonify({'username': username, 'points': row[0]})
-    else:
-        return jsonify({'message': 'Usuario no encontrado'}), 404
-
+# Ranking por usuario
 @app.route('/ranking')
 def ranking():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT username, points FROM users ORDER BY points DESC LIMIT 20")
+    cursor.execute("SELECT username, points FROM users ORDER BY points DESC")
     rows = cursor.fetchall()
     conn.close()
-    ranking = [{"username": row[0], "points": row[1]} for row in rows]
-    return jsonify(ranking)
+    return jsonify([{"username": row["username"], "points": row["points"]} for row in rows])
 
-# Iniciar el servidor
-@app.route('/')
-def home():
-    return render_template('index.html')
+# Ranking por equipo
+@app.route('/ranking_equipos')
+def ranking_equipos():
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    cursor.execute('''
+        SELECT teams.team_name, SUM(users.points) as total_points
+        FROM users
+        JOIN team_members ON users.qr_code = team_members.qr_code
+        JOIN teams ON team_members.team_id = teams.id
+        GROUP BY teams.id
+        ORDER BY total_points DESC
+    ''')
+
+    rows = cursor.fetchall()
+    conn.close()
+    return jsonify([{"team": row["team_name"], "points": row["total_points"]} for row in rows])
