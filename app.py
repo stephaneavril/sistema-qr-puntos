@@ -103,6 +103,10 @@ def ranking_equipos():
     conn.close()
     return jsonify([{"team": row["team_name"], "points": row["total_points"]} for row in rows])
 
+@app.route('/ranking_general')
+def ranking_general():
+    return render_template('ranking.html')
+
 @app.route('/reset', methods=['POST'])
 def reset_all():
     data = request.get_json()
