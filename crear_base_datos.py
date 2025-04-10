@@ -8,29 +8,39 @@ def crear_base_datos():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
+            qr_code TEXT UNIQUE,
+            username TEXT,
             points INTEGER DEFAULT 0
-        )
-    ''')
-
-    # Tabla de códigos QR
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS qrcodes (
-            id TEXT PRIMARY KEY
         )
     ''')
 
     # Tabla de escaneos
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS scans (
-            user_id INTEGER,
-            qr_code_id TEXT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            qr_code TEXT,
             timestamp TEXT
+        )
+    ''')
+
+    # Tabla de equipos
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS teams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_name TEXT
+        )
+    ''')
+
+    # Tabla de miembros de equipo
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS team_members (
+            qr_code TEXT,
+            team_id INTEGER
         )
     ''')
 
     conn.commit()
     conn.close()
-    print("✅ Base de datos creada con éxito")
+    print("✅ Base de datos creada con las nuevas tablas.")
 
 crear_base_datos()
