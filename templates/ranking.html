@@ -2,68 +2,105 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Ranking | ALFASTARS</title>
+  <title>Ranking General | ALFASTARS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+      --red: #ec1c24;
+      --light: #f7f9fa;
+      --gray: #ccc;
+      --text: #333;
+      --white: #fff;
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f1f3f5;
+      background-color: var(--light);
       margin: 0;
       padding: 0;
-      text-align: center;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     header {
-      background-color: #ec1c24;
-      color: white;
-      padding: 15px;
+      background-color: var(--red);
+      color: var(--white);
+      padding: 25px 0;
+      font-size: 24px;
+      font-weight: bold;
     }
 
     .container {
+      flex: 1;
       max-width: 800px;
       margin: 30px auto;
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      background: var(--white);
+      border-radius: 14px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
     }
 
     h2 {
+      text-align: center;
+      font-size: 22px;
       margin-top: 30px;
-      color: #333;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
+      margin-top: 15px;
     }
 
     th {
-      background-color: #ec1c24;
-      color: white;
+      background-color: var(--red);
+      color: var(--white);
+      padding: 12px;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid var(--gray);
     }
 
     footer {
-      margin-top: 40px;
+      text-align: center;
+      padding: 15px;
+      background-color: var(--white);
       font-size: 14px;
-      color: #555;
+      color: #888;
+    }
+
+    footer a {
+      color: var(--red);
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+
+      table, th, td {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>Ranking General de ALFASTARS</h1>
+    Ranking General de ALFASTARS
   </header>
 
   <div class="container">
-    <h2>🏅 Ranking de Usuarios</h2>
+    <h2>🥇 Ranking de Usuarios</h2>
     <table id="ranking-usuarios">
       <thead>
         <tr>
@@ -89,44 +126,33 @@
   </div>
 
   <footer>
-    © 2025 TEAMS | <a href="https://www.teams.com.mx" target="_blank" style="color: inherit; text-decoration: none;">teams.com.mx</a>
+    © 2025 TEAMS | <a href="https://teams.com.mx" target="_blank">teams.com.mx</a>
   </footer>
 
   <script>
-    async function cargarRankingUsuarios() {
-      const res = await fetch("/ranking");
-      const data = await res.json();
-      const tbody = document.querySelector("#ranking-usuarios tbody");
-      tbody.innerHTML = "";
-      data.forEach((usuario, index) => {
+    async function cargarRanking() {
+      const resUsuarios = await fetch("/ranking");
+      const usuarios = await resUsuarios.json();
+      const tbodyUsuarios = document.querySelector("#ranking-usuarios tbody");
+      tbodyUsuarios.innerHTML = "";
+      usuarios.forEach((user, index) => {
         const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${usuario.username}</td>
-          <td>${usuario.points}</td>
-        `;
-        tbody.appendChild(row);
+        row.innerHTML = `<td>${index + 1}</td><td>${user.username}</td><td>${user.points}</td>`;
+        tbodyUsuarios.appendChild(row);
+      });
+
+      const resEquipos = await fetch("/ranking_equipos");
+      const equipos = await resEquipos.json();
+      const tbodyEquipos = document.querySelector("#ranking-equipos tbody");
+      tbodyEquipos.innerHTML = "";
+      equipos.forEach((team, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${index + 1}</td><td>${team.team}</td><td>${team.points}</td>`;
+        tbodyEquipos.appendChild(row);
       });
     }
 
-    async function cargarRankingEquipos() {
-      const res = await fetch("/ranking_equipos");
-      const data = await res.json();
-      const tbody = document.querySelector("#ranking-equipos tbody");
-      tbody.innerHTML = "";
-      data.forEach((equipo, index) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${equipo.team}</td>
-          <td>${equipo.points}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    cargarRankingUsuarios();
-    cargarRankingEquipos();
+    cargarRanking();
   </script>
 </body>
 </html>
