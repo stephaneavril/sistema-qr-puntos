@@ -35,6 +35,7 @@
       border-radius: 12px;
       padding: 20px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: none;
     }
 
     h2 {
@@ -94,7 +95,12 @@
     <div id="puntos-section" style="display: none; margin-top: 20px;">
       <label for="puntos">¿Cuántos puntos quieres asignar?</label>
       <select id="puntos">
+        <option value="-100">-100</option>
+        <option value="-50">-50</option>
+        <option value="-20">-20</option>
+        <option value="-10">-10</option>
         <option value="10">10</option>
+        <option value="20">20</option>
         <option value="50">50</option>
         <option value="100">100</option>
         <option value="200">200</option>
@@ -120,10 +126,9 @@
     </table>
   </div>
 
-  <div id="admin-reset" style="margin-top: 40px;">
+  <div id="admin-reset" style="margin-top: 40px; display: none;">
     <button onclick="mostrarReset()">🗑️ Resetear todos los datos</button>
   </div>
-
 
   <script>
     let qr_code_actual = null;
@@ -174,34 +179,61 @@
       });
     }
 
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", { fps: 10, qrbox: 250 });
-    html5QrcodeScanner.render(onScanSuccess);
-
-    cargarRanking();
-
     function mostrarReset() {
-  const token = prompt("Introduce el token secreto para continuar:");
-  if (!token) return;
+      const token = prompt("Introduce el token secreto para continuar:");
+      if (!token) return;
 
-  fetch("/reset", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token })
-  })
-    .then(res => res.json())
-    .then(data => {
-      alert(data.message || data.error);
+      fetch("/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token })
+      })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message || data.error);
+          cargarRanking();
+        });
+    }
+
+    // 🔐 Validación por token personal
+    const TOKENS_VALIDOS = [
+      "alpha123", "beta456", "gamma789", "delta000", "omega111",
+      "theta222", "sigma333", "zeta444", "lambda555", "kappa666"
+    ];
+
+    window.onload = function () {
+      const tokenGuardado = localStorage.getItem("token_acceso");
+
+      if (!TOKENS_VALIDOS.includes(tokenGuardado)) {
+        const token = prompt("🔐 Ingresa tu token personal:");
+        if (!TOKENS_VALIDOS.includes(token)) {
+          alert("Token inválido ❌");
+          window.location.reload();
+        } else {
+          localStorage.setItem("token_acceso", token);
+          mostrarSistema();
+        }
+      } else {
+        mostrarSistema();
+      }
+    };
+
+    function mostrarSistema() {
+      document.querySelector(".container").style.display = "block";
+      document.getElementById("admin-reset").style.display = "block";
+
+      const html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", { fps: 10, qrbox: 250 });
+      html5QrcodeScanner.render(onScanSuccess);
+
       cargarRanking();
-    });
-}
-
-  
+    }
   </script>
 
-<footer style="margin-top: 50px; font-size: 14px; color: #444; font-weight: bold;">
-  © 2025 TEAMS | <a href="https://www.teams.com.mx" target="_blank" style="color: inherit; text-decoration: none;">teams.com.mx</a>
-</footer>
+  <footer style="margin-top: 50px; font-size: 14px; color: #444; font-weight: bold;">
+    © 2025 TEAMS | <a href="https://www.teams.com.mx" target="_blank" style="color: inherit; text-decoration: none;">teams.com.mx</a>
+  </footer>
 
 </body>
 </html>
+
