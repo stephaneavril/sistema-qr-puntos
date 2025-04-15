@@ -79,10 +79,16 @@ def scan_qr():
 def ranking():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT username, points FROM users ORDER BY points DESC")
+    cursor.execute("SELECT qr_code, nombre, apellido, points FROM users ORDER BY points DESC")
     rows = cursor.fetchall()
     conn.close()
-    return jsonify([{"username": row["username"], "points": row["points"]} for row in rows])
+
+    return jsonify([
+        {
+            "username": f"{row['nombre']} {row['apellido']}".strip() if row["nombre"] else row["qr_code"],
+            "points": row["points"]
+        } for row in rows
+    ])
 
 # Ranking por equipo
 @app.route('/ranking_equipos')
@@ -106,6 +112,39 @@ def ranking_equipos():
 @app.route('/ranking_general')
 def ranking_general():
     return render_template('ranking.html')
+
+@app.route('/registrar_participante', methods=['POST'])
+def registrar_participante():
+    data = request.get_json()
+    qr = data.get("qr")
+    nombre = data.get("nombre")
+    apellido = data.get("apellido")
+    equipo_id = data.get("equipo_id")
+
+    if not qr or not nombre or not apellido or not equipo_id:
+        return jsonify({"error": "Faltan datos"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Verifica si existe
+    cursor.execute("SELECT * FROM users WHERE qr_code = ?", (qr,))
+    if cursor.fetchone():
+        cursor.execute("UPDATE users SET nombre = ?, apellido = ? WHERE qr_code = ?", (nombre, apellido, qr))
+    else:
+        cursor.execute("INSERT INTO users (qr_code, username, points, nombre, apellido) VALUES (?, ?, 0, ?, ?)", (qr, qr, nombre, apellido))
+
+    # Vincular al equipo
+    cursor.execute("SELECT * FROM team_members WHERE qr_code = ?", (qr,))
+    if cursor.fetchone():
+        cursor.execute("UPDATE team_members SET team_id = ? WHERE qr_code = ?", (equipo_id, qr))
+    else:
+        cursor.execute("INSERT INTO team_members (team_id, qr_code) VALUES (?, ?)", (equipo_id, qr))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "✅ Participante registrado correctamente"})
 
 @app.route('/reset', methods=['POST'])
 def reset_all():
