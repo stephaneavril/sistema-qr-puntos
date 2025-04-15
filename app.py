@@ -126,3 +126,11 @@ def reset_all():
     conn.close()
 
     return jsonify({'message': '✅ Todos los datos han sido eliminados correctamente'})
+
+@app.route('/admin_panel')
+def admin_panel():
+    return render_template('admin_panel.html')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
