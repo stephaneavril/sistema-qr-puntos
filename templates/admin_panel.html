@@ -116,35 +116,50 @@
   <script>
     const form = document.getElementById("form-agregar");
     const tabla = document.querySelector("#tabla-participantes tbody");
-
-    const participantes = [];
-
-    form.addEventListener("submit", function (e) {
+  
+    form.addEventListener("submit", async function (e) {
       e.preventDefault();
-
-      const qr = document.getElementById("qr").value.trim();
+  
+      let qr = document.getElementById("qr").value.trim();
       const nombre = document.getElementById("nombre").value.trim();
       const apellido = document.getElementById("apellido").value.trim();
-      const equipo = document.getElementById("equipo").selectedOptions[0].text;
-
-      if (!qr || !nombre || !apellido || equipo === "-- Selecciona un equipo --") {
+      const equipoSelect = document.getElementById("equipo");
+      const equipo_id = equipoSelect.value;
+      const equipo_nombre = equipoSelect.selectedOptions[0].text;
+  
+      // 🧼 Limpieza del QR: quitar extensiones y espacios
+      qr = qr.replace(/\.(png|jpg|jpeg)$/i, "").replace(/\s+/g, "");
+  
+      if (!qr || !nombre || !apellido || equipo_id === "") {
         alert("Completa todos los campos correctamente.");
         return;
       }
-
-      participantes.push({ qr, nombre, apellido, equipo });
-
+  
+      // Guardar en backend
+      const res = await fetch("/registrar_participante", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qr, nombre, apellido, equipo_id })
+      });
+  
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+  
+      // Agregar visualmente
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${qr}</td>
         <td>${nombre}</td>
         <td>${apellido}</td>
-        <td>${equipo}</td>
+        <td>${equipo_nombre}</td>
       `;
       tabla.appendChild(row);
-
       form.reset();
     });
   </script>
+  
 </body>
 </html>
