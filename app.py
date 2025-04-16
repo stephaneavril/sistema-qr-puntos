@@ -79,14 +79,28 @@ def scan_qr():
 def ranking():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT qr_code, nombre, apellido, points FROM users ORDER BY points DESC")
+
+    cursor.execute("""
+        SELECT u.qr_code, u.nombre, u.apellido, u.points, t.team_name
+        FROM users u
+        LEFT JOIN team_members tm ON u.qr_code = tm.qr_code
+        LEFT JOIN teams t ON tm.team_id = t.id
+        ORDER BY u.points DESC
+    """)
     rows = cursor.fetchall()
     conn.close()
 
+    def nombre_completo(row):
+        nombre = row["nombre"] or ""
+        apellido = row["apellido"] or ""
+        full = f"{nombre} {apellido}".strip()
+        return full if full else row["qr_code"]
+
     return jsonify([
         {
-            "username": f"{row['nombre']} {row['apellido']}".strip() if row["nombre"] else row["qr_code"],
-            "points": row["points"]
+            "username": nombre_completo(row),
+            "points": row["points"],
+            "team": row["team_name"] or "Sin equipo"
         } for row in rows
     ])
 
@@ -96,18 +110,24 @@ def ranking_equipos():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT teams.team_name, SUM(users.points) as total_points
-        FROM users
-        JOIN team_members ON users.qr_code = team_members.qr_code
-        JOIN teams ON team_members.team_id = teams.id
-        GROUP BY teams.id
+    cursor.execute("""
+        SELECT t.team_name, COALESCE(SUM(u.points), 0) AS total_points
+        FROM teams t
+        LEFT JOIN team_members tm ON t.id = tm.team_id
+        LEFT JOIN users u ON tm.qr_code = u.qr_code
+        GROUP BY t.id
         ORDER BY total_points DESC
-    ''')
+    """)
 
     rows = cursor.fetchall()
     conn.close()
-    return jsonify([{"team": row["team_name"], "points": row["total_points"]} for row in rows])
+
+    return jsonify([
+        {
+            "team": row["team_name"],
+            "points": row["total_points"]
+        } for row in rows
+    ])
 
 @app.route('/ranking_general')
 def ranking_general():
