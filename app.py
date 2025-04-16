@@ -166,6 +166,26 @@ def registrar_participante():
 
     return jsonify({"message": "✅ Participante registrado correctamente"})
 
+@app.route('/eliminar_participante', methods=['POST'])
+def eliminar_participante():
+    data = request.get_json()
+    qr = data.get("qr")
+
+    if not qr:
+        return jsonify({"error": "Falta código QR"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM team_members WHERE qr_code = ?", (qr,))
+    cursor.execute("DELETE FROM scans WHERE qr_code = ?", (qr,))
+    cursor.execute("DELETE FROM users WHERE qr_code = ?", (qr,))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": f"✅ Participante '{qr}' eliminado correctamente"})
+
 @app.route('/reset', methods=['POST'])
 def reset_all():
     data = request.get_json()

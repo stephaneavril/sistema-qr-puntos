@@ -113,6 +113,14 @@
     </table>
   </div>
 
+  <hr>
+<h3>🗑️ Eliminar participante</h3>
+<form id="form-eliminar">
+  <label for="qr_eliminar">Código QR a eliminar</label>
+  <input type="text" id="qr_eliminar" required>
+  <button type="submit">Eliminar Participante</button>
+</form>
+
   <script>
     const form = document.getElementById("form-agregar");
     const tabla = document.querySelector("#tabla-participantes tbody");
@@ -159,6 +167,27 @@
       tabla.appendChild(row);
       form.reset();
     });
+
+    // Manejar eliminación
+document.getElementById("form-eliminar").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  let qr = document.getElementById("qr_eliminar").value.trim();
+  qr = qr.replace(/\.(png|jpg|jpeg)$/i, "").replace(/\s+/g, "");
+
+  const confirmacion = confirm(`¿Estás seguro que deseas eliminar a '${qr}'?`);
+  if (!confirmacion) return;
+
+  const res = await fetch("/eliminar_participante", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ qr })
+  });
+
+  const data = await res.json();
+  alert(data.message || data.error);
+  document.getElementById("form-eliminar").reset();
+});
+
   </script>
   
 </body>
