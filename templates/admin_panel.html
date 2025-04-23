@@ -114,6 +114,18 @@
   </div>
 
   <hr>
+<h3>🎁 Asignar puntos manualmente</h3>
+<form id="form-manual">
+  <label for="qr_manual">Código QR</label>
+  <input type="text" id="qr_manual" required>
+
+  <label for="puntos_manual">Puntos a asignar</label>
+  <input type="number" id="puntos_manual" required>
+
+  <button type="submit">Asignar Puntos</button>
+</form>
+
+  <hr>
 <h3>🗑️ Eliminar participante</h3>
 <form id="form-eliminar">
   <label for="qr_eliminar">Código QR a eliminar</label>
@@ -186,6 +198,29 @@ document.getElementById("form-eliminar").addEventListener("submit", async functi
   const data = await res.json();
   alert(data.message || data.error);
   document.getElementById("form-eliminar").reset();
+});
+
+// Asignar puntos manualmente
+document.getElementById("form-manual").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  let qr = document.getElementById("qr_manual").value.trim();
+  let puntos = parseInt(document.getElementById("puntos_manual").value.trim());
+  qr = qr.replace(/\.(png|jpg|jpeg)$/i, "").replace(/\s+/g, "");
+
+  if (!qr || isNaN(puntos)) {
+    alert("Debes ingresar un código válido y puntos numéricos.");
+    return;
+  }
+
+  const res = await fetch("/asignar_puntos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ qr, puntos })
+  });
+
+  const data = await res.json();
+  alert(data.message || data.error);
+  document.getElementById("form-manual").reset();
 });
 
   </script>

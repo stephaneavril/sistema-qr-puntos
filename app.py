@@ -314,6 +314,28 @@ def reset_all():
 
     return jsonify({'message': '✅ Todos los datos han sido eliminados correctamente'})
 
+@app.route('/asignar_puntos', methods=['POST'])
+def asignar_puntos():
+    data = request.get_json()
+    qr = data.get("qr")
+    puntos = data.get("puntos")
+
+    if not qr or not isinstance(puntos, int):
+        return jsonify({"error": "Datos inválidos"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM users WHERE qr_code = ?", (qr,))
+    if not cursor.fetchone():
+        return jsonify({"error": "El código QR no existe"}), 404
+
+    cursor.execute("UPDATE users SET points = points + ? WHERE qr_code = ?", (puntos, qr))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": f"✅ Se asignaron {puntos} puntos manualmente a {qr}"})
+
 @app.route('/admin_panel')
 def admin_panel():
     return render_template('admin_panel.html')
