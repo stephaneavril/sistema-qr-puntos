@@ -69,6 +69,12 @@ def scan_qr():
     # Registrar escaneo
     cursor.execute("INSERT INTO scans (qr_code, timestamp) VALUES (?, ?)", (qr_code, datetime.now().isoformat()))
 
+    token_usado = request.headers.get("X-User-Token")
+    cursor.execute(
+    "INSERT INTO scan_logs (token_usado, qr_code_destino, puntos_asignados, timestamp) VALUES (?, ?, ?, ?)",
+    (token_usado, qr_code, puntos, datetime.now().isoformat())
+)
+
     conn.commit()
     conn.close()
 
