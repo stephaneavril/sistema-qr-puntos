@@ -6,10 +6,9 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 CORS(app)
 
-inicializar_base_si_falta()
-
+# ✅ Primero defines la función
 def inicializar_base_si_falta():
-    conn = get_db_connection()
+    conn = sqlite3.connect('scan_points.db')
     cursor = conn.cursor()
 
     # Crear tablas si no existen
@@ -64,6 +63,9 @@ def inicializar_base_si_falta():
 
     conn.commit()
     conn.close()
+
+# ✅ Luego la llamas
+inicializar_base_si_falta()
 
 def get_db_connection():
     conn = sqlite3.connect('scan_points.db')
