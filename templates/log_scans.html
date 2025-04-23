@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Log de Escaneos</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+    table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #ec1c24; color: white; }
+    h1 { text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>📋 Log de Escaneos</h1>
+
+  <div style="text-align: center; margin-bottom: 20px;">
+    <a href="{{ url_for('descargar_log_scans') }}" style="padding: 10px 20px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 6px;">
+      ⬇️ Descargar Excel
+    </a>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Token</th>
+        <th>QR Escaneado</th>
+        <th>Nombre</th>
+        <th>Puntos</th>
+        <th>Fecha y Hora</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in registros %}
+      <tr>
+        <td>{{ r.token_usado }}</td>
+        <td>{{ r.qr_code_destino }}</td>
+        <td>{{ r.nombre or '' }} {{ r.apellido or '' }}</td>
+        <td>{{ r.puntos_asignados }}</td>
+        <td>{{ r.timestamp }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

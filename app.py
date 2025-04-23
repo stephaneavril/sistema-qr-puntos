@@ -210,6 +210,46 @@ def reset_all():
 def admin_panel():
     return render_template('admin_panel.html')
 
+@app.route('/log_scans')
+def log_scans():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT l.token_usado, l.qr_code_destino, u.nombre, u.apellido, l.puntos_asignados, l.timestamp
+        FROM scan_logs l
+        LEFT JOIN users u ON l.qr_code_destino = u.qr_code
+        ORDER BY l.timestamp DESC
+        LIMIT 100
+    """)
+    registros = cursor.fetchall()
+    conn.close()
+    return render_template("log_scans.html", registros=registros)
+
+from flask import send_file
+import pandas as pd
+import io
+
+@app.route('/descargar_log_scans')
+def descargar_log_scans():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT l.token_usado, l.qr_code_destino, u.nombre, u.apellido, l.puntos_asignados, l.timestamp
+        FROM scan_logs l
+        LEFT JOIN users u ON l.qr_code_destino = u.qr_code
+        ORDER BY l.timestamp DESC
+    """)
+    registros = cursor.fetchall()
+    conn.close()
+
+    df = pd.DataFrame(registros, columns=["token_usado", "qr_code_destino", "nombre", "apellido", "puntos_asignados", "timestamp"])
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Escaneos')
+    output.seek(0)
+
+    return send_file(output, as_attachment=True, download_name="log_scans.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 if __name__ == '__main__':
     app.run(debug=True)
