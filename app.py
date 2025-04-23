@@ -6,6 +6,65 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 CORS(app)
 
+inicializar_base_si_falta()
+
+def inicializar_base_si_falta():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Crear tablas si no existen
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            qr_code TEXT PRIMARY KEY,
+            username TEXT,
+            points INTEGER,
+            nombre TEXT,
+            apellido TEXT
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS scans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            qr_code TEXT,
+            timestamp TEXT
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS teams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_name TEXT NOT NULL
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS team_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_id INTEGER NOT NULL,
+            qr_code TEXT NOT NULL
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS scan_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token_usado TEXT,
+            qr_code_destino TEXT,
+            puntos_asignados INTEGER,
+            timestamp TEXT
+        )
+    """)
+
+    # Insertar equipos si aún no existen
+    cursor.execute("SELECT COUNT(*) FROM teams")
+    if cursor.fetchone()[0] == 0:
+        cursor.executemany("INSERT INTO teams (team_name) VALUES (?)", [
+            ("Equipo A",),
+            ("Equipo B",),
+            ("Equipo C",),
+            ("Equipo D",)
+        ])
+
+    conn.commit()
+    conn.close()
+
 def get_db_connection():
     conn = sqlite3.connect('scan_points.db')
     conn.row_factory = sqlite3.Row
