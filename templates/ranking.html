@@ -104,62 +104,45 @@
   </header>
 
   <div class="container">
-    <h2>🌟 Participantes Destacados</h2>
-    <table id="ranking-usuarios">
-      <thead>
-        <tr>
-          <th>Posición</th>
-          <th>Nombre</th>
-          <th>Puntos</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
 
-    <h2>🎬 Ranking de Equipos</h2>
-    <table id="ranking-equipos">
+    <!-- ⭐ PARTICIPANTES -->
+    <h2>🌟 Participantes Destacados</h2>
+    <table>
       <thead>
-        <tr>
-          <th>Posición</th>
-          <th>Equipo</th>
-          <th>Puntos</th>
-        </tr>
+        <tr><th>Posición</th><th>Nombre</th><th>Puntos</th></tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        {% for pos, nombre, pts in participantes %}
+          <tr>
+            <td class="star">{{ pos }}</td>
+            <td>{{ nombre }}</td>
+            <td>{{ pts }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
-  </div>
+  
+    <!-- 🎬 EQUIPOS -->
+    <h2>🎬 Ranking de Equipos</h2>
+    <table>
+      <thead>
+        <tr><th>Posición</th><th>Equipo</th><th>Puntos</th></tr>
+      </thead>
+      <tbody>
+        {% for pos, equipo, pts in equipos %}
+          <tr>
+            <td class="star">{{ pos }}</td>
+            <td>{{ equipo }}</td>
+            <td>{{ pts }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  
+  </div>  
 
   <footer>
     © 2025 TEAMS | <a href="https://teams.com.mx" target="_blank">teams.com.mx</a>
   </footer>
-
-  <script>
-    async function cargarRankingUsuarios() {
-      const res = await fetch("/ranking");
-      const data = await res.json();
-      const tbody = document.querySelector("#ranking-usuarios tbody");
-      tbody.innerHTML = "";
-      data.forEach((usuario, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td class="star">${i + 1}</td><td>${usuario.username}</td><td>${usuario.points}</td>`;
-        tbody.appendChild(row);
-      });
-    }
-
-    async function cargarRankingEquipos() {
-      const res = await fetch("/ranking_equipos");
-      const data = await res.json();
-      const tbody = document.querySelector("#ranking-equipos tbody");
-      tbody.innerHTML = "";
-      data.forEach((equipo, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td class="star">${i + 1}</td><td>${equipo.team}</td><td>${equipo.points}</td>`;
-        tbody.appendChild(row);
-      });
-    }
-
-    cargarRankingUsuarios();
-    cargarRankingEquipos();
-  </script>
 </body>
 </html>

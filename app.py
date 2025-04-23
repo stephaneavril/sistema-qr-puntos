@@ -137,7 +137,48 @@ def ranking_equipos():
 
 @app.route('/ranking_general')
 def ranking_general():
-    return render_template('ranking.html')
+    conn   = get_db_connection()
+    cursor = conn.cursor()
+
+    # ---------- PARTICIPANTES ----------
+    cursor.execute("""
+        SELECT u.qr_code, u.nombre, u.apellido, u.points
+        FROM users u
+        ORDER BY u.points DESC
+    """)
+    usuarios = cursor.fetchall()
+
+    participantes = [
+        (
+            idx + 1,
+            (row["nombre"] or "") + " " + (row["apellido"] or "") or row["qr_code"],
+            row["points"]
+        )
+        for idx, row in enumerate(usuarios)
+    ]
+
+    # ---------- EQUIPOS ----------
+    cursor.execute("""
+        SELECT t.team_name, COALESCE(SUM(u.points),0) AS total_points
+        FROM teams t
+        LEFT JOIN team_members tm ON t.id = tm.team_id
+        LEFT JOIN users u ON tm.qr_code = u.qr_code
+        GROUP BY t.id
+        ORDER BY total_points DESC
+    """)
+    filas_equipo = cursor.fetchall()
+    conn.close()
+
+    equipos = [
+        (idx + 1, row["team_name"], row["total_points"])
+        for idx, row in enumerate(filas_equipo)
+    ]
+
+    return render_template(
+        "ranking.html",
+        participantes=participantes,
+        equipos=equipos
+    )
 
 @app.route('/registrar_participante', methods=['POST'])
 def registrar_participante():
